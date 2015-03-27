@@ -4,6 +4,8 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ConectionDB {
 	/**
@@ -80,7 +82,9 @@ public class ConectionDB {
 		}
 	}
 
-	public void consultarDatos(final String miConsulta) {
+	List<String> lista = new ArrayList<String>();
+
+	public List<String> consultarDatos(final String miConsulta) {
 
 		java.sql.Statement s;
 		ResultSet rs; // Puntero o cursor a la fila actual
@@ -90,14 +94,16 @@ public class ConectionDB {
 			rs = s.executeQuery(miConsulta);
 
 			while (rs.next()) {
-				for (int i = 1; i <= rs.getMetaData().getColumnCount(); i++)
+				for (int i = 1; i <= rs.getMetaData().getColumnCount(); i++) {
+					lista.add(new String(rs.getString(i)));
 					System.out.print(" " + rs.getString(i) + " |");
-				System.out.println();
+				}
 			}
 
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
+		return lista;
 	}
 
 	public void desconectarBD() {
@@ -110,7 +116,7 @@ public class ConectionDB {
 		}
 	}
 
-	public void insertarDatos(final String miConsulta) {
+	public String insertarDatos(final String miConsulta) {
 
 		// java.sql.PreparedStatement s;
 
@@ -127,5 +133,6 @@ public class ConectionDB {
 			}
 			e.printStackTrace();
 		}
+		return miConsulta;
 	}
 }

@@ -2,20 +2,27 @@ package net.erickpineda;
 
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.image.Image;
-import javafx.scene.layout.BorderPane;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
+import net.erickpineda.controllers.BooksController;
 
 public class Main extends Application {
+	
 	@Override
 	public void start(Stage primaryStage) {
 		try {
-			BorderPane root = FXMLLoader.load(getClass().getResource(
+			// BorderPane root = FXMLLoader.load(getClass().getResource(
+			// "views/Books.fxml"));
+
+			FXMLLoader loader = new FXMLLoader(getClass().getResource(
 					"views/Books.fxml"));
 
-			Scene scene = new Scene(root, 470, 440, Color.BLACK);
+			Parent root = loader.load();
+			
+			Scene scene = new Scene(root, Color.BLACK);
 			scene.getStylesheets().add(
 					getClass().getResource("content/css/application.css")
 							.toExternalForm());
@@ -26,12 +33,19 @@ public class Main extends Application {
 			primaryStage.getIcons().add(
 					new Image(getClass().getResource(
 							"content/images/mantis.png").toExternalForm()));
+			
+			
+			BooksController mc = loader.getController();
+			mc.setStage(primaryStage);
 
 			primaryStage.show();
 
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+	}
+	public Main(){
+		
 	}
 
 	public static void main(String[] args) {
