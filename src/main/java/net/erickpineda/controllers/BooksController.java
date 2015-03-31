@@ -28,7 +28,7 @@ public class BooksController implements Initializable {
 	 * Lista desplegable, de los idiomas existentes del programa.
 	 */
 	@FXML
-	private ComboBox<String> escogerIdiomaExistenteID;
+	private ComboBox<String> comboBox;
 	/**
 	 * Stage de la clase principal, no me acuerdo para que lo puse de esta
 	 * forma.
@@ -63,6 +63,22 @@ public class BooksController implements Initializable {
 	 */
 	private Map<Character, Integer> mapa;
 	/**
+	 * Expresión regular para validar el idioma {@code [A-Za-zñÑçÇ] 2,20} .
+	 */
+	private static final String REGEXP = "[A-Za-zñÑçÇ]{2,20}";
+	/**
+	 * Nombre de la base de datos, a crear o leer.
+	 */
+	private static final String BDD_NAME = "books";
+	/**
+	 * Nombre del usuario de la base de datos.
+	 */
+	private static final String BDD_USER = "admin";
+	/**
+	 * Contraseña de la base de datos.
+	 */
+	private static final String BDD_PASSWD = "";
+	/**
 	 * Semáforo para comprobar que creará o mostrará un libro.
 	 */
 	private boolean Ok = false;
@@ -71,8 +87,9 @@ public class BooksController implements Initializable {
 	 * Inicializador del controlador.
 	 */
 	public void initialize(URL location, ResourceBundle resources) {
-		conecta = new ConectionDB("books", "admin", "");
-		conecta.conectarBD();
+		conecta = new ConectionDB(BDD_NAME, BDD_USER, BDD_PASSWD).conectarBD();
+
+		// conecta.conectarBD();
 		CrearTablaBDD();
 		mostrarIdiomas();
 		xAxis.setCategories(caracteres);
@@ -94,14 +111,14 @@ public class BooksController implements Initializable {
 	 */
 	public void rellenaChart() {
 		if (isOk() == true) {
-			barChart.getData().clear();
-			caracteres.clear();
+			reiniciarVariables();
 
 			for (Map.Entry<Character, Integer> m : mapa.entrySet()) {
 				caracteres.add(new String(Character.toString(m.getKey())));
 			}
+
 			setCaracteres(caracteres);
-			Ok = false;
+			setOk(false);
 		}
 	}
 
@@ -118,7 +135,6 @@ public class BooksController implements Initializable {
 			enteros.add(new Integer(m.getValue()));
 		}
 
-		// Create a XYChart.Data object for each month. Add it to the series.
 		for (int i = 0; i < carac.size(); i++) {
 			XYChart.Series<String, Integer> series = new XYChart.Series<>();
 
@@ -138,7 +154,7 @@ public class BooksController implements Initializable {
 	 */
 	@FXML
 	public void botonAbrir(ActionEvent event) {
-		if (textIdiomaID.getCharacters().length() > 0)
+		if (textIdiomaID.getText().matches(REGEXP))
 			abrirFichero();
 		else
 			mensajeError();
@@ -152,7 +168,34 @@ public class BooksController implements Initializable {
 	 */
 	@FXML
 	public void botonMostrar(ActionEvent event) {
+		String idioma = comboBox.getSelectionModel().getSelectedItem()
+				.toLowerCase();
 
+		barChart.setTitle("Books " + idioma);
+
+		if (idioma.matches(REGEXP)) {
+			if (!idioma.equalsIgnoreCase("(Ninguno)")) {
+
+				String sql = "SELECT distinct letra, vecesRepetida "
+						+ "FROM Books WHERE idioma = '" + idioma + ""
+						+ "' ORDER BY letra asc;";
+
+				if (conecta.consultarDatos(sql, true) == true) {
+					reiniciarVariables();
+					setMapa(conecta.getMapa());
+					setOk(true);
+					rellenaChart();
+
+				} else {
+					mensajeError();
+				}
+
+			} else {
+				mensajeError();
+			}
+		} else {
+			mensajeError();
+		}
 	}
 
 	/**
@@ -172,9 +215,13 @@ public class BooksController implements Initializable {
 		if (textoPlano != null) {
 			Acciones actua = new Acciones(textoPlano, conecta);
 			actua.leerFichero();
+
 			actua.insertarDatosTabla(textIdiomaID.getText());
-			mapa = actua.getMapa();
-			Ok = true;
+			barChart.setTitle("Books " + textIdiomaID.getText());
+			textIdiomaID.setText("");
+			setMapa(actua.getMapa());
+			setOk(true);
+
 		}
 		rellenaChart();
 	}
@@ -184,8 +231,8 @@ public class BooksController implements Initializable {
 	 * 
 	 * @return Retorna un String con la tabla.
 	 */
-	private static String CrearTablaBDD() {
-		return conecta.insertarDatos("CREATE TABLE IF NOT EXISTS Books("
+	private static void CrearTablaBDD() {
+		conecta.insertarDatos("CREATE TABLE IF NOT EXISTS Books("
 				+ "id int PRIMARY KEY auto_increment,"
 				+ "letra VARCHAR(1) NOT NULL," + "idioma VARCHAR(20) NOT NULL,"
 				+ "vecesRepetida INT NULL," + "frecuencia VARCHAR(30) NULL);");
@@ -196,22 +243,47 @@ public class BooksController implements Initializable {
 	 * existentes.
 	 */
 	private void mostrarIdiomas() {
-		List<String> idiomas = conecta
-				.consultarDatos("SELECT distinct idioma FROM Books GROUP BY idioma;");
+		conecta.consultarDatos(
+				"SELECT distinct idioma FROM Books GROUP BY idioma;", false);
 
 		ObservableList<String> opciones = FXCollections
-				.observableArrayList(idiomas);
+				.observableArrayList(conecta.getLista());
 
-		escogerIdiomaExistenteID.setItems(opciones);
+		comboBox.setItems(opciones);
+		comboBox.getItems().add("(Ninguno)");
+		conecta.getLista().clear();
 	}
 
 	/**
-	 * 
+	 *
 	 * @return Retorna cierto o falso según se haya rellenado los valores del
 	 *         barchart.
 	 */
 	public boolean isOk() {
 		return Ok;
+	}
+
+	/**
+	 * 
+	 * @param ok
+	 *            Cambiar Ok.
+	 */
+	public void setOk(boolean ok) {
+		this.Ok = ok;
+	}
+
+	public void setMapa(Map<Character, Integer> mapa) {
+		this.mapa = mapa;
+	}
+
+	/**
+	 * Método que actualiza los idiomas, desde la BDD y elimina los valores de
+	 * algunas variables para reutilizarlas.
+	 */
+	private void reiniciarVariables() {
+		barChart.getData().clear();
+		caracteres.clear();
+		mostrarIdiomas();
 	}
 
 	/**
@@ -233,7 +305,7 @@ public class BooksController implements Initializable {
 	 */
 	private void infoAcerca() {
 		Alert alert = new Alert(AlertType.INFORMATION);
-		alert.setTitle("Error de entrada");
+		alert.setTitle("Creador");
 		alert.setHeaderText("Hola a quien lea esto");
 
 		alert.setContentText("Mi nombre es Erick Pineda, más conocido"
@@ -253,6 +325,7 @@ public class BooksController implements Initializable {
 	 */
 	@FXML
 	public void salir(ActionEvent event) {
+		conecta.desconectarBD();
 		System.exit(0);
 	}
 

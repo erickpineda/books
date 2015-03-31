@@ -24,13 +24,15 @@ public class Acciones {
 	/**
 	 * Expresión regular para validar diferentes idiomas.
 	 */
-	private static final String REGEXP = "[^A-Za-zñÑ]";
-	private boolean todoOk = false;
+	private static final String REGEXP = "[^A-Za-zñÑçÇäöüß]";
 
 	/**
 	 * Mapa que almacenará la letra y la cantidad de veces que repite.
 	 */
 	private Map<Character, Integer> mapa;
+	/**
+	 * Conector a la BDD por medio de la clase {@code ConectionDB}.
+	 */
 	private ConectionDB conecta;
 
 	/**
@@ -77,17 +79,48 @@ public class Acciones {
 		return mapa;
 	}
 
+	/**
+	 * Método que pasa por parámetro un número, para calcular la frecuencia de
+	 * la letra en entre el alfabeto.
+	 * 
+	 * @param individual
+	 *            Número que serán las veces que repite la letra en el texto.
+	 * @return Retorna un double, que será el porcentaje.
+	 */
+	private double calcularFrecuencia(double individual) {
+		double nTotalLetras = 0.0;
+
+		for (Entry<Character, Integer> m : mapa.entrySet()) {
+			nTotalLetras += m.getValue();
+		}
+
+		return (individual * 100.0) / nTotalLetras;
+	}
+
+	/**
+	 * Método que inserta datos en la tabla, iterando un mapa con valores.
+	 * 
+	 * @param idioma
+	 *            Será el idioma, con el que se hará la consulta.
+	 */
 	public void insertarDatosTabla(String idioma) {
 
 		for (Entry<Character, Integer> m : mapa.entrySet()) {
 
-			conecta.insertarDatos("insert into Books values(default,'"
-					+ m.getKey() + "','" + idioma + "'," + m.getValue()
-					+ ",'100%'),");
+			try {
+				// Si el idioma no existe hace un insert
+				conecta.insertarDatos("insert into Books values(default,'"
+						+ m.getKey() + "','" + idioma + "'," + m.getValue()
+						+ ",'" + calcularFrecuencia(m.getValue()) + "%'),");
 
-			// conecta.insertarDatos("insert into Books values('" + idioma +
-			// "','"
-			// + m.getKey() + "'," + m.getValue() + ",'100%')");
+			} catch (Exception e) {
+				// Hace un update si el idioma existe, para reemplazar los
+				// nuevos valores
+				conecta.actualizarDatos("UPDATE Books SET vecesRepetida = "
+						+ m.getValue() + ", frecuencia = '"
+						+ calcularFrecuencia(m.getValue())
+						+ "%' WHERE idioma = '" + idioma + "';");
+			}
 		}
 	}
 
@@ -110,14 +143,6 @@ public class Acciones {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-	}
-
-	public boolean isTodoOk() {
-		return todoOk;
-	}
-
-	public void setTodoOk(boolean todoOk) {
-		this.todoOk = todoOk;
 	}
 
 	/**
