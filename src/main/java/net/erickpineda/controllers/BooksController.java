@@ -88,10 +88,10 @@ public class BooksController implements Initializable {
 	 */
 	public void initialize(URL location, ResourceBundle resources) {
 		conecta = new ConectionDB(BDD_NAME, BDD_USER, BDD_PASSWD).conectarBD();
-
-		// conecta.conectarBD();
 		CrearTablaBDD();
 		mostrarIdiomas();
+		comboBox.setPromptText("Selecciona un país");
+		textIdiomaID.setPromptText("Idioma del libro");
 		xAxis.setCategories(caracteres);
 	}
 
@@ -168,8 +168,7 @@ public class BooksController implements Initializable {
 	 */
 	@FXML
 	public void botonMostrar(ActionEvent event) {
-		String idioma = comboBox.getSelectionModel().getSelectedItem()
-				.toLowerCase();
+		String idioma = comboBox.getEditor().getText();
 
 		barChart.setTitle("Books " + idioma);
 
