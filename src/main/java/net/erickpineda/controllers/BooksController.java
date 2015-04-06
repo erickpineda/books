@@ -90,7 +90,7 @@ public class BooksController implements Initializable {
 		conecta = new ConectionDB(BDD_NAME, BDD_USER, BDD_PASSWD).conectarBD();
 		CrearTablaBDD();
 		mostrarIdiomas();
-		comboBox.setPromptText("Selecciona un país");
+		comboBox.setPromptText("Selecciona un idioma");
 		textIdiomaID.setPromptText("Idioma del libro");
 		xAxis.setCategories(caracteres);
 	}
@@ -136,10 +136,11 @@ public class BooksController implements Initializable {
 		}
 
 		for (int i = 0; i < carac.size(); i++) {
-			XYChart.Series<String, Integer> series = new XYChart.Series<>();
+			XYChart.Series<String, Integer> series = new XYChart.Series<String, Integer>();
 
 			series.getData().add(
-					new XYChart.Data<>(caracteres.get(i), enteros.get(i)));
+					new XYChart.Data<String, Integer>(caracteres.get(i),
+							enteros.get(i)));
 
 			barChart.getData().add(series);
 		}
